@@ -1,0 +1,72 @@
+name: daily
+
+# 平日 21:30 JST（= 12:30 UTC）に株価を取得 → 仮想約定・集計 → スマホ向けページを公開。
+# answers/ に判断JSONを push したときも動く（登録とページ更新だけが目的）。
+on:
+  schedule:
+    - cron: "30 12 * * 1-5"
+  workflow_dispatch:
+  push:
+    paths:
+      - "answers/**"
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      # DBは data ブランチに1コミットだけ置く（毎回置き換えるので履歴が膨らまない）
+      - name: Restore DB
+        run: |
+          mkdir -p data
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch --depth=1 origin data
+            git show FETCH_HEAD:public.db > data/lab.db
+            echo "BOOTSTRAP=0" >> "$GITHUB_ENV"
+          else
+            echo "BOOTSTRAP=1" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-cloud.txt
+
+      - name: Update prices
+        run: |
+          if [ "$BOOTSTRAP" = "1" ]; then PERIOD=1y; else PERIOD=1mo; fi
+          python -m src.update --period "$PERIOD" || echo "::warning::更新に問題があります（ログを確認）"
+
+      - name: Register answers
+        run: python -m src.cloud_register answers || echo "::warning::登録されなかった判断があります"
+
+      - name: Build site
+        run: python -m src.site data/lab.db site
+
+      - name: Publish DB (data branch)
+        run: |
+          python -m src.publicdb data/lab.db public.db
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          rm -rf /tmp/pub && mkdir /tmp/pub && cp public.db /tmp/pub/
+          cd /tmp/pub && git init -q -b data && git add public.db && git commit -qm "db $(date -u +%F)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+
+      - name: Publish site (gh-pages branch)
+        run: |
+          rm -rf /tmp/pages && mkdir /tmp/pages && cp -r site/. /tmp/pages/
+          cd /tmp/pages && git init -q -b gh-pages && git add -A
+          git -c user.name=github-actions -c user.email=actions@users.noreply.github.com commit -qm "site $(date -u +%F)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages

@@ -1,0 +1,13 @@
+[
+  {
+    "model": "claude",
+    "as_of": "2026-03-02",
+    "ticker": "1001",
+    "action": "buy",
+    "confidence": 0.6,
+    "reason": "5日線が20日線を上抜け（サンプル）",
+    "risk_notes": "全体相場の下落に注意",
+    "qty": 10,
+    "stop_price": 1400
+  }
+]

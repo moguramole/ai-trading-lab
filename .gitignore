@@ -1,0 +1,9 @@
+.venv/
+.env
+*.db
+__pycache__/
+.pytest_cache/
+data/
+site/
+public.db
+!answers/
