@@ -15,6 +15,7 @@ from . import fetch
 def make(src, dst) -> dict:
     """srcを読み取り専用で開いてdstへ複製し、持ち株と関連する株価を消す。取り除いた件数を返す。"""
     src, dst = Path(src), Path(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists():
         dst.unlink()
     s = sqlite3.connect(f"file:{src.as_posix()}?mode=ro", uri=True)
