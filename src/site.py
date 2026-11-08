@@ -129,7 +129,8 @@ def build_html(con, now=None) -> str:
         tr = [[esc(t.trade_date), esc(t.ticker) + " " + nm(t.ticker), "買" if t.side == "buy" else "売",
                f"{t.qty:,}", f"{t.price:,.1f}"] for t in trades]
         acct.append(f"<section><h2>{LABEL[m]}の口座</h2>"
-                    f"<p class='muted'>現金 {yen(broker.cash)}</p>"
+                    f"<p><strong>総資産 {yen(broker.cash + sum(q * last.get(t, 0) for t, q in broker.positions.items()))}</strong>"
+                    f"<span class='muted'>（現金 {yen(broker.cash)} ＋ 株式評価額 {yen(sum(q * last.get(t, 0) for t, q in broker.positions.items()))}）</span></p>"
                     f"<h3>保有</h3>{table(['銘柄', '株数', '終値', '評価額'], pos, num=(1, 2, 3))}"
                     f"<h3>直近の判断（判断日 {esc(latest or '–')}）</h3>{table(['銘柄', '判断', '株数', '理由'], today, num=(2,))}"
                     f"<h3>直近の約定</h3>{table(['約定日', '銘柄', '売買', '株数', '価格'], tr, num=(3, 4))}</section>")
