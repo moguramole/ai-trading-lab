@@ -59,7 +59,7 @@ TOPIX500外の銘柄も登録でき、価格は自動取得の対象に加わる
 
 ## スマホで見る・PCオフで更新（GitHub Actions）
 
-`.github/workflows/daily.yml` が平日21:30（JST）にクラウド側で株価取得→仮想約定・集計→スマホ向けページ（`src/site.py`）を更新する。
+`.github/workflows/daily.yml` が平日の毎時30分（UTC基準、JSTでも毎時30分）にクラウド側で株価取得→仮想約定・集計→スマホ向けページ（`src/site.py`）を更新する。
 - DBは持ち株を除いたもの（`src/publicdb.py`）を `data` ブランチに1コミットだけ置く。ページは `gh-pages` ブランチ。
 - 載せるのは仮想売買の成績・判断・取引と市場概況だけ。**持ち株は載せない・クラウドに上げない。**
 - 判断JSONは `answers/answer_<gpt|claude>_<判断日>.json` を push すると登録される（検証はPCと同じ。締め切り・1日1回も同じ）。
